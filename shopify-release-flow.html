@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Release and content flows</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --ink: #14181f; --muted: #566070;
+    --line: #7c8798; --border: #d6dce4; --cmd-bg: #eef1f5;
+    --blue: #1d5cc9; --blue-bg: #e7effd;
+    --amber: #8a5200; --amber-bg: #fff2d6;
+    --green: #17653a; --green-bg: #e3f4ea;
+    --red: #a1251e; --red-bg: #fdeae8;
+    --violet: #5638bd; --violet-bg: #eeeafc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1318; --card: #171c24; --ink: #e8ecf1; --muted: #a2adbb;
+      --line: #6d7889; --border: #2a3240; --cmd-bg: #222935;
+      --blue: #8db2ff; --blue-bg: #172544;
+      --amber: #ffc76b; --amber-bg: #3a2a0d;
+      --green: #75d9a0; --green-bg: #12301f;
+      --red: #ff948c; --red-bg: #3b1916;
+      --violet: #bbaaff; --violet-bg: #261f47;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.75rem; margin: 0 0 4px; }
+  h2 { font-size: 1.3rem; margin: 0; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .86em; }
+  code { background: var(--cmd-bg); padding: 1px 6px; border-radius: 5px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 28px; padding: 12px 14px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; font-size: .88rem; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; display: inline-block; }
+  .sw.pr { border-color: var(--blue); background: var(--blue-bg); }
+  .sw.human { border-color: var(--amber); background: var(--amber-bg); }
+  .sw.cmd { border-color: var(--line); background: var(--cmd-bg); }
+  .sw.ok { border-color: var(--green); background: var(--green-bg); }
+  .sw.stop { border-color: var(--red); background: var(--red-bg); }
+  .sw.prop { border-color: var(--violet); background: var(--violet-bg); border-style: dashed; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    text-decoration: none; color: inherit; display: block; }
+  .card:hover, .card:focus-visible { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px var(--blue-bg); }
+  .card h3 { margin: 6px 0 4px; font-size: 1.05rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .9rem; }
+  .num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--blue); color: #fff; font-weight: 700; font-size: .85rem; }
+  @media (prefers-color-scheme: dark) { .num { color: #0f1318; } }
+
+  section.flowbox { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 18px 28px; margin-bottom: 28px; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .badge { font-size: .74rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    padding: 2px 9px; border-radius: 999px; border: 1px solid; }
+  .badge.cur { color: var(--green); background: var(--green-bg); border-color: var(--green); }
+  .badge.prop { color: var(--violet); background: var(--violet-bg); border-color: var(--violet); }
+  .when { color: var(--muted); margin: 0 0 22px; font-size: .95rem; }
+
+  .flow { display: flex; flex-direction: column; align-items: center; }
+  .node { width: min(600px, 100%); background: var(--card); border: 2px solid var(--line);
+    border-radius: 10px; padding: 10px 14px; position: relative; }
+  .node b { display: block; }
+  .node p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+  .node.cmd { background: var(--cmd-bg); }
+  .node.pr { border-color: var(--blue); background: var(--blue-bg); }
+  .node.human { border-color: var(--amber); background: var(--amber-bg); }
+  .node.ok { border-color: var(--green); background: var(--green-bg); }
+  .node.stop { border-color: var(--red); background: var(--red-bg); }
+  .node.prop { border-color: var(--violet); background: var(--violet-bg); border-style: dashed; }
+  .node.decision { border-radius: 999px; text-align: center; padding: 12px 24px; border-color: var(--ink); }
+  .node.key { box-shadow: 0 0 0 3px var(--blue-bg), 0 0 0 5px var(--blue); }
+  .tag { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    padding: 1px 7px; border-radius: 999px; margin-right: 8px; vertical-align: 1px; background: var(--ink); color: var(--bg); }
+  .pr .tag { background: var(--blue); color: #fff; }
+  .human .tag, .tag.hum { background: var(--amber); color: #fff; }
+  .prop .tag { background: var(--violet); color: #fff; }
+  .ok .tag { background: var(--green); color: #fff; }
+  .stop .tag { background: var(--red); color: #fff; }
+  @media (prefers-color-scheme: dark) {
+    .pr .tag, .human .tag, .tag.hum, .prop .tag, .ok .tag, .stop .tag { color: #0f1318; }
+  }
+
+  .arr { position: relative; width: 2px; height: 30px; background: var(--line); margin: 0 auto; }
+  .arr::after { content: ""; position: absolute; bottom: -1px; left: -5px; border: 6px solid transparent;
+    border-top: 8px solid var(--line); border-bottom: 0; }
+  .arr small { position: absolute; left: 14px; top: 4px; white-space: nowrap; color: var(--muted); font-size: .78rem; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: min(820px, 100%); }
+  .col { display: flex; flex-direction: column; align-items: center; }
+  .col > .node { width: 100%; }
+  .branchlbl { font-weight: 700; font-size: .8rem; letter-spacing: .05em; margin: 0 0 6px; }
+  .branchlbl.yes { color: var(--green); } .branchlbl.no { color: var(--red); }
+  .fork { width: min(410px, 50%); height: 22px; border: 2px solid var(--line); border-bottom: 0;
+    border-radius: 12px 12px 0 0; margin: 0 auto; }
+  .note { width: min(600px, 100%); margin-top: 14px; padding: 10px 14px; border-left: 4px solid var(--violet);
+    background: var(--violet-bg); border-radius: 0 8px 8px 0; font-size: .9rem; }
+  .parallel { width: min(600px, 100%); margin-bottom: 14px; padding: 8px 14px; border: 1px dashed var(--line);
+    border-radius: 10px; color: var(--muted); font-size: .9rem; text-align: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--cmd-bg); }
+  tr:last-child td { border-bottom: 0; }
+  .tablewrap { overflow-x: auto; }
+
+  @media (max-width: 720px) {
+    .cards { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    .fork { display: none; }
+    .col + .col { margin-top: 6px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Release and content flows</h1>
+  <p class="lead">How the merchant's content and the code reach the published theme. Based on <code>docs/release-process.md</code>.</p>
+
+  <div class="legend" aria-label="Legend">
+    <span><i class="sw pr"></i> Pull request</span>
+    <span><i class="sw human"></i> Human only</span>
+    <span><i class="sw cmd"></i> Command or action</span>
+    <span><i class="sw ok"></i> Result</span>
+    <span><i class="sw stop"></i> Stop</span>
+    <span><i class="sw prop"></i> Part of the proposal (pending approval)</span>
+  </div>
+
+  <nav class="cards" aria-label="Flows">
+    <a class="card" href="#normal"><span class="num">1</span>
+      <h3>Normal release</h3>
+      <p>Carries code and content. This is the default. Content always enters with <code>git merge origin/content</code>.</p></a>
+    <a class="card" href="#content-only"><span class="num">2</span>
+      <h3>Content-only release</h3>
+      <p>A separate, faster path: PR <code>content → production</code>, only if the diff is 100% content.</p></a>
+    <a class="card" href="#sync"><span class="num">3</span>
+      <h3>Update content after a release</h3>
+      <p>Brings released code from <code>production</code> into <code>content</code>, so the merchant's theme does not fall behind.</p></a>
+  </nav>
+
+  <!-- FLOW 1 -->
+  <section class="flowbox" id="normal" aria-labelledby="h-normal">
+    <div class="head"><span class="num">1</span><h2 id="h-normal">Normal release</h2><span class="badge cur">Current process</span></div>
+    <p class="when">Used when there is code to release (with or without merchant edits). Content from the <code>content</code> branch always goes with it.</p>
+
+    <div class="flow">
+      <div class="parallel">In parallel, at any time: the merchant edits the <b>[Store] - Content</b> theme → the App commits to the <code>content</code> branch</div>
+
+      <div class="node"><span class="tag">1</span><b>Create <code>release/2026-10-14</code> from <code>development</code></b>
+        <p>Feature PRs were already merged into <code>development</code> earlier.</p></div>
+      <div class="arr"></div>
+      <div class="node cmd key"><span class="tag">2</span><b><code>git merge origin/content</code></b>
+        <p>This is where the merchant's content enters, every time.</p></div>
+      <div class="arr"></div>
+      <div class="node cmd"><span class="tag">3</span><b><code>npx barrel-theme-kit build --env development</code></b>
+        <p>Without <code>--check</code>: writes <code>RELEASES.md</code> and the ledger. Commit the result.</p></div>
+      <div class="arr"></div>
+      <div class="node pr"><span class="tag">PR</span><b>release/2026-10-14 → development</b></div>
+      <div class="arr"></div>
+      <div class="node pr"><span class="tag">PR</span><b>development → staging</b>
+        <p>QA and the client review on the Staging theme. Content gate.</p></div>
+      <div class="arr"></div>
+      <div class="node pr"><span class="tag">PR</span><b>staging → main</b>
+        <p>Content gate. <code>git diff main production --stat</code> shows only what this release contains.</p></div>
+      <div class="arr"></div>
+      <div class="node human"><span class="tag">PR · human</span><b>main → production</b>
+        <p><b style="display:inline">Only a human merges this.</b> The App syncs the theme connected to <code>production</code>.</p></div>
+      <div class="arr"><small>proposal</small></div>
+      <div class="node prop"><span class="tag">Proposal</span><b>A human checks the Production theme, duplicates it and publishes the copy</b>
+        <p>Name: <code>2026-10-06 - [DO NOT EDIT]</code>. The previous copy is kept for rollback.</p></div>
+      <div class="arr"></div>
+      <div class="node cmd"><span class="tag">4</span><b>Close the release</b>
+        <p><code>git diff production main --stat</code> must be empty · <code>release --finalize</code> · send the <code>RELEASES.md</code> section to the client.</p></div>
+      <div class="arr"><small>if the release carried code</small></div>
+      <div class="node ok"><span class="tag">Then</span><b>Run flow 3 (update content)</b></div>
+    </div>
+  </section>
+
+  <!-- FLOW 2 -->
+  <section class="flowbox" id="content-only" aria-labelledby="h-co">
+    <div class="head"><span class="num">2</span><h2 id="h-co">Content-only release</h2><span class="badge prop">Proposal</span></div>
+    <p class="when">Used when the merchant needs to publish content and there is <b>no code</b> to release. It is a separate process from the normal release, with an entry condition.</p>
+
+    <div class="flow">
+      <div class="parallel">The merchant edits the <b>[Store] - Content</b> theme → the App commits to the <code>content</code> branch</div>
+
+      <div class="node cmd"><b>Check the diff</b>
+        <p><code>git diff origin/production origin/content --name-only</code></p></div>
+      <div class="arr"></div>
+      <div class="node decision"><b>Does every file carry the <code>content</code> attribute?</b>
+        <p><code>git check-attr content &lt;path&gt;</code></p></div>
+      <div class="fork" aria-hidden="true"></div>
+
+      <div class="split">
+        <div class="col">
+          <p class="branchlbl no">NO</p>
+          <div class="node stop"><span class="tag">Stop</span><b>A code file shows up</b>
+            <p>This is not a content-only release. Use the <a href="#normal" style="color:inherit">normal release (flow 1)</a>.</p></div>
+        </div>
+        <div class="col">
+          <p class="branchlbl yes">YES</p>
+          <div class="node human"><span class="tag">PR · human</span><b>content → production</b>
+            <p>CODEOWNERS approval. The reviewer confirms the diff is content only and that the merchant checked the Content theme preview. <b style="display:inline">Only a human merges this.</b></p></div>
+          <div class="arr"></div>
+          <div class="node cmd"><b>The App syncs the theme connected to <code>production</code></b></div>
+          <div class="arr"><small>proposal</small></div>
+          <div class="node prop"><span class="tag">Proposal</span><b>Duplicate and publish the dated copy</b></div>
+          <div class="arr"></div>
+          <div class="node ok"><span class="tag">Done</span><b>Nothing is carried down</b>
+            <p>The next normal release brings the same content in with <code>git merge origin/content</code>.</p></div>
+        </div>
+      </div>
+
+      <div class="note"><b>Until the next normal release:</b> <code>main</code> differs from <code>production</code> by content files only. That is why the "empty diff" check applies after a normal release, not after this one. Recording it in <code>RELEASES.md</code> is an open decision.</div>
+    </div>
+  </section>
+
+  <!-- FLOW 3 -->
+  <section class="flowbox" id="sync" aria-labelledby="h-sync">
+    <div class="head"><span class="num">3</span><h2 id="h-sync">Update <code>content</code> after a release</h2><span class="badge prop">Proposal</span></div>
+    <p class="when">After a release or hotfix that put <b>code</b> on <code>production</code>. Without it, the Content theme is missing the new sections and blocks. <b>Not needed</b> after a content-only release.</p>
+
+    <div class="flow">
+      <div class="node ok"><span class="tag">Trigger</span><b>A release (or hotfix) with code is on <code>production</code></b></div>
+      <div class="arr"></div>
+      <div class="node cmd"><span class="tag">1</span><b>Create <code>chore/sync-content-&lt;date&gt;</code> from <code>origin/content</code></b></div>
+      <div class="arr"></div>
+      <div class="node cmd key"><span class="tag">2</span><b><code>git merge origin/production</code></b>
+        <p>The source is <b style="display:inline">always <code>production</code></b>. Never staging, development or main, so unreleased code never reaches the merchant's theme.</p></div>
+      <div class="arr"></div>
+      <div class="node decision"><b>Any conflicts?</b></div>
+      <div class="fork" aria-hidden="true"></div>
+
+      <div class="split">
+        <div class="col">
+          <p class="branchlbl no">YES</p>
+          <div class="node"><b>Conflict rule</b>
+            <p><b style="display:inline">Content</b> files: the <code>content</code> side wins.<br>Everything else (<b style="display:inline">code</b>): the <code>production</code> side wins.</p></div>
+          <div class="arr"></div>
+          <div class="node stop"><span class="tag">Investigate</span><b>Conflict in a content file</b>
+            <p>The file changed on both sides: someone probably edited the live theme directly.</p></div>
+        </div>
+        <div class="col">
+          <p class="branchlbl yes">NO</p>
+          <div class="node ok"><b>Go straight to the PR</b></div>
+        </div>
+      </div>
+
+      <div class="arr"></div>
+      <div class="node pr"><span class="tag">PR</span><b>chore/sync-content-&lt;date&gt; → content</b>
+        <p>The <code>content</code> branch requires a PR with 1 CODEOWNERS approval. Direct pushes are not possible.</p></div>
+      <div class="arr"></div>
+      <div class="node cmd"><span class="tag">Check</span><b><code>git diff origin/production origin/content --stat</code></b>
+        <p>Should list content files only: the merchant's edits since the release.</p></div>
+      <div class="arr"></div>
+      <div class="node decision"><b>Does a code file appear in the list?</b></div>
+      <div class="fork" aria-hidden="true"></div>
+      <div class="split">
+        <div class="col">
+          <p class="branchlbl no">YES</p>
+          <div class="node stop"><span class="tag">Stop</span><b>The branches have diverged on code</b>
+            <p>Tell the Tech Lead. Do not fix it yourself.</p></div>
+        </div>
+        <div class="col">
+          <p class="branchlbl yes">NO</p>
+          <div class="node ok"><span class="tag">Done</span><b>Content theme has the new code</b>
+            <p>The merchant can already see and place the release's sections and blocks.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h2 style="margin:36px 0 12px">Comparing the two kinds of release</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Normal release</th><th>Content-only release</th></tr></thead>
+      <tbody>
+        <tr><th>Carries code</th><td>Yes</td><td><b>No</b> (this is the entry condition)</td></tr>
+        <tr><th>Content source</th><td><code>git merge origin/content</code> on the release branch</td><td>The <code>content</code> branch is the PR source</td></tr>
+        <tr><th>Path</th><td><code>development → staging → main → production</code></td><td><code>content → production</code></td></tr>
+        <tr><th>QA</th><td>Staging, audit and consent</td><td>Content theme preview</td></tr>
+        <tr><th>After the merge</th><td><code>git diff production main --stat</code> is empty</td><td><code>main</code> differs from <code>production</code> by content only, until the next normal release</td></tr>
+        <tr><th><code>content</code> sync</th><td>Yes, if there was code</td><td>Not needed</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>
